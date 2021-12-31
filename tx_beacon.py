@@ -26,7 +26,7 @@ import sys
 from time import sleep
 from SX127x.LoRa import *
 from SX127x.LoRaArgumentParser import LoRaArgumentParser
-from SX127x.board_config import BOARD
+from SX127x.boards.RPi_inAir9B import BOARD
 
 BOARD.setup()
 

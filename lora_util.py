@@ -22,8 +22,8 @@
 # <http://www.gnu.org/licenses/>.
 
 
-from SX127x.LoRa import *
-from SX127x.board_config import BOARD
+from SX127x.LoRa import LoRa
+from SX127x.boards.RPi_inAir9B import BOARD
 import argparse
 
 BOARD.setup()

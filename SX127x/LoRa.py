@@ -23,7 +23,6 @@
 
 import sys
 from .constants import *
-from .board_config import BOARD
 
 
 ################################################## Some utility functions ##############################################
@@ -72,27 +71,56 @@ def setter(register_address):
     return decorator
 
 
-############################################### Definition of the LoRa class ###########################################
+############################################### Definition of the BaseLoRa class ###########################################
 
-class LoRa(object):
 
-    spi = BOARD.SpiDev()              # init and get the baord's SPI
+
+class GenericLoRa(object):
+    """
+    LoRa driver implementation.
+    Does not need to be used with a board class; takes an SPI connection and a
+    band flag, and an add_events callback to set up interrupt line callbacks
+    from the modem.
+    
+    Can be extended and have its on_ methods overridden to receive interrupts.
+    If no add_events is provided to the constructor, the user must call
+    handle_irq_flags() occasionally in order for interrupts to be handled.
+    """
+
+    spi = None
+    low_band = True
     mode = None                       # the mode is backed up here
     backup_registers = []
     verbose = True
     dio_mapping = [None] * 6          # store the dio mapping here
+    irq_events_available = False
 
-    def __init__(self, verbose=True, do_calibration=True, calibration_freq=868):
-        """ Init the object
+    def __init__(self, spi_connection, low_band, add_events=None, verbose=True, do_calibration=True, calibration_freq=868):
+        """Create a new LoRa driver object.
         
         Send the device to sleep, read all registers, and do the calibration (if do_calibration=True)
+        :param spi_connection: the open spidev SPI connection to the modem
+        :param low_band: tell pySX127x here whether the attached RF module uses
+        low-band (RF*_LF pins) or high-band (RF*_HF pins). Low band (called
+        band 1&2) are 137-175 MHz and 410-525 MHz. High band (called band 3) is
+        862-1020 MHz.
+        :param add_events: A board-specific function that can be called with 6
+        functions, which will register them to be called when the modem sneds
+        an IRQ signal on the corresponding DIO line. If not specified, polling
+        will be used to detect interrupts from the modem.
         :param verbose: Set the verbosity True/False
-        :param calibration_freq: call rx_chain_calibration with this parameter. Default is 868
+        :param calibration_freq: call rx_chain_calibration with this frequency
+        parameter in MHz. Default is 868
         :param do_calibration: Call rx_chain_calibration, default is True.
         """
+        self.spi = spi_connection
+        self.low_band = low_band
         self.verbose = verbose
-        # set the callbacks for DIO0..5 IRQs.
-        BOARD.add_events(self._dio0, self._dio1, self._dio2, self._dio3, self._dio4, self._dio5)
+        if add_events:
+            # set the callbacks for DIO0..5 IRQs.
+            add_events(self._dio0, self._dio1, self._dio2, self._dio3, self._dio4, self._dio5)
+            # We have events for these so we don't need to do any polling.
+            self.irq_events_available = True
         # set mode to sleep and read all registers
         self.set_mode(MODE.SLEEP)
         self.backup_registers = self.get_all_registers()
@@ -200,6 +228,43 @@ class LoRa(object):
 
     def _dio5(self, channel):
         raise RuntimeError("DIO5 is not used")
+        
+    def handle_irq_flags(self):
+        """
+        Retrieve the IRQ flags and dispatch the handler methods for all the set
+        flags.
+        
+        If add_events is not passed to __init__, this method must be called
+        periodically by the user for the various overridable on_ functions to
+        work. 
+        """
+        flags = self.get_irq_flags()
+        # Clear all the interrupt flags that were set so we can get them again.
+        # clear_irq_flags takes any non-None as a clear, even 0 or False, so we make sure to provide Nones.
+        self.clear_irq_flags(RxTimeout=flags['rx_timeout'] or None,
+                             RxDone=flags['rx_done'] or None,
+                             PayloadCrcError=flags['crc_error'] or None, 
+                             ValidHeader=flags['valid_header'] or None,
+                             TxDone=flags['tx_done'] or None,
+                             CadDone=flags['cad_done'] or None, 
+                             FhssChangeChannel=flags['fhss_change_ch'] or None,
+                             CadDetected=flags['cad_detected'] or None)
+        if flags['rx_timeout']:
+            self.on_rx_timeout()
+        if flags['rx_done']:
+            self.on_rx_done()
+        if flags['crc_error']:
+            self.on_payload_crc_error()
+        if flags['valid_header']:
+            self.on_valid_header()
+        if flags['tx_done']:
+            self.on_tx_done()
+        if flags['cad_done']:
+            self.on_cad_done()
+        if flags['fhss_change_ch']:
+            self.on_fhss_change_channel()
+        if flags['cad_detected']:
+            self.on_CadDetected()
 
     # All the set/get/read/write functions
 
@@ -243,7 +308,9 @@ class LoRa(object):
         self.set_fifo_addr_ptr(base_addr)
 
     def rx_is_good(self):
-        """ Check the IRQ flags for RX errors
+        """ Check the IRQ flags for RX errors.
+        The relevant flags must have been cleared before the RX, and not
+        cleared or handled since the RX.
         :return: True if no errors
         :rtype: bool
         """
@@ -493,11 +560,11 @@ class LoRa(object):
 
     def get_pkt_rssi_value(self):
         v = self.spi.xfer([REG.LORA.PKT_RSSI_VALUE, 0])[1]
-        return v - (164 if BOARD.low_band else 157)     # See datasheet 5.5.5. p. 87
+        return v - (164 if self.low_band else 157)     # See datasheet 5.5.5. p. 87
 
     def get_rssi_value(self):
         v = self.spi.xfer([REG.LORA.RSSI_VALUE, 0])[1]
-        return v - (164 if BOARD.low_band else 157)     # See datasheet 5.5.5. p. 87
+        return v - (164 if self.low_band else 157)     # See datasheet 5.5.5. p. 87
 
     def get_hop_channel(self):
         v = self.spi.xfer([REG.LORA.HOP_CHANNEL, 0])[1]
@@ -949,3 +1016,33 @@ class LoRa(object):
         s += " status             %s\n" % self.get_modem_status()
         s += " version            %#02x\n" % self.get_version()
         return s
+        
+############################################### Definition of the LoRa class ###########################################
+
+class LoRa(GenericLoRa):
+    """
+    Board-based LoRa driver implementation.
+    
+    Requires a SX127x.boards.BaseBoard implementation to supply SPI, band, and
+    interrupt line capabilities.
+    
+    Can be extended and have its on_ methods overridden to receive interrupts.
+    If the board does not support interrupt lines, the user must call
+    handle_irq_flags() occasionally in order for interrupts to be handled. 
+    """
+    
+    def __init__(self, board=None, verbose=True, do_calibration=True, calibration_freq=868):
+        if board is None:
+            # Try and import a default board
+            from SX127x.board_config import BOARD as board
+        
+        # Connect to the default SPI bus for the board
+        spi_connection = board.SpiDev()
+        # Determine if we are low band or not
+        low_band = board.low_band
+        # Grab the interrupt line attacher if the board has that capability
+        add_events=getattr(board, 'add_events', None)
+        # Pass along the parameters we derived from the board definition 
+        super().__init__(spi_connection, low_band, add_events=add_events,
+                         verbose=verbose, do_calibration=do_calibration, calibration_freq=calibration_freq)
+
