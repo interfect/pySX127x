@@ -6,5 +6,5 @@ authors = ["Adam Novak <interfect@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3"
-spidev = ">=3.5"
+spidev = ">=3.1"
 

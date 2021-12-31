@@ -16,7 +16,7 @@
 # mandatory as soon as you develop commercial activities involving spi-lora without disclosing the source code of your
 # own applications, or shipping spi-lora with a closed source product.
 #
-# You should have received a copy of the GNU General Public License along with pySX127.  If not, see
+# You should have received a copy of the GNU General Public License aling with spi-lora.  If not, see
 # <http://www.gnu.org/licenses/>.
 
 import time

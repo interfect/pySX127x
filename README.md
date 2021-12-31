@@ -1,109 +1,84 @@
-# Overview
+# `spi-lora`: a Python package for using SPI-connected LoRa modems
 
-This is a python interface to the [Semtech SX1276/7/8/9](http://www.semtech.com/wireless-rf/rf-transceivers/) 
-long range, low power transceiver family.
+This package, based on [`pySX127x`](https://github.com/mayeranalytics/pySX127x), provides a Python interface for working with LoRa modules such as the [HopeRF RFM95W](http://anarduino.com/docs/RFM95_96_97_98W.pdf), those based on the [Semtech SX1276/7/8/9](http://www.semtech.com/wireless-rf/rf-transceivers/) series of chips, or the Microchip [RN2483](http://ww1.microchip.com/downloads/en/DeviceDoc/50002346A.pdf).
 
-The SX127x have both LoRa and FSK capabilities. Here the focus lies on the
-LoRa spread spectrum modulation hence only the LoRa modem interface is implemented so far 
-(but see the [roadmap](#roadmap) below for future plans).
-
-Spread spectrum modulation has a number of intriguing features:
-* High interference immunity
-* Up to 20dBm link budget advantage (for the SX1276/7/8/9)
-* High Doppler shift immunity
-
-More information about LoRa can be found on the [LoRa Alliance website](https://lora-alliance.org).
-Links to some LoRa performance reports can be found in the [references](#references) section below.
-
-
-# Motivation
-
-Transceiver modules are usually interfaced with microcontroller boards such as the 
-Arduino and there are already many fine C/C++ libraries for the SX127x family available on 
-[github](https://github.com/search?q=sx127x) and [mbed.org](https://developer.mbed.org/search/?q=sx127x).
-
-Although C/C++ is the de facto standard for development on microcontrollers, [python](https://www.python.org)
-running on a Raspberry Pi (NanoPi, BananaPi, UDOO Neo, BeagleBoard, etc. etc.) is becoming a viable alternative for rapid prototyping.
-
-High level programming languages like python require a full-blown OS such as Linux. (There are some exceptions like
-[MicroPython](https://micropython.org) and its fork [CircuitPython](https://www.adafruit.com/circuitpython).)
-But using hardware capable of running Linux contradicts, to some extent, the low power specification of the SX127x family.
-Therefore it is clear that this approach aims mostly at prototyping and technology testing.
-
-Prototyping on a full-blown OS using high level programming languages has several clear advantages:
-* Working prototypes can be built quickly 
-* Technology testing ist faster
-* Proof of concept is easier to achieve
-* The application development phase is reached quicker 
+This package intends to allow using these devices over a generic Linux SPI bus, from a Raspberry Pi or similar single-board computer, or from any linux system with a `/dev/spidev0.0` to attach the modem to. While it supports using the dedicated DIO interrupt request lines on the HopeRF RFM95W series modules, they do not need to be available.
 
 
 # Hardware
 
-The transceiver module is a SX1276 based Modtronix [inAir9B](http://modtronix.com/inair9.html). 
-It is mounted on a prototyping board to a Raspberry Pi rev 2 model B.
+To use this package, you usually want to use a board definition, inheriting from `spi_lora.boards.BaseBoard`. The module currently provides a couple of pre-defined boards:
+* `spi_lora.boards.Generic_RMF95.BOARD`, for an RMF95 module attached via SPI only on SPI bus 0 device 0.
+* `spi_lora.boards.RPi_inAir9B.BOARD`, for the inAir9B on a Raspberry Pi system that `pySX127x` is designed for. This can only be safely imported if `RPi.GPIO` is available.
 
-| Proto board pin | RaspPi GPIO | Direction |
-|:----------------|:-----------:|:---------:|
-| inAir9B DIO0    | GPIO 22     |    IN     |
-| inAir9B DIO1    | GPIO 23     |    IN     |
-| inAir9B DIO2    | GPIO 24     |    IN     |
-| inAir9B DIO3    | GPIO 25     |    IN     |
-| inAir9b Reset   | GPIO ?      |    OUT    |
-| LED             | GPIO 18     |    OUT    |
-| Switch          | GPIO 4      |    IN     |
+If you aren't using one of these hardware configurations, you can define your own board definition by extending `spi_lora.boards.BaseBoard`.
 
-Todo:
-- [ ] Add picture(s)
-- [ ] Wire the SX127x reset to a GPIO?
+If you do not want to use a board definition, you can use the `spi_lora.LoRa.GenericLoRa` class, which requires only an SPI connection and a low/high band flag, but you will need to manage creating and setting the data rate on the SPI connection yourself.
 
+If your board does not support dedicated interrupt event lines (and `irq_events_available` is false on your `LoRa` or `GenericLoRa`), you will need to poll for interrupts by occasionally calling the `handle_irq_flags()` method.
 
 # Code Examples
 
 ### Overview
-First import the modules 
+First import the LoRa class, constants you plan to use, and a board definition: 
 ```python
-from spi_lora.LoRa import *
-from spi_lora.board_config import BOARD
+from spi_lora.LoRa import LoRa
+from spi_lora.constants import MODE, CODING_RATE
+from spi_lora.boards.Generic_RMF95 import BOARD
 ```
-then set up the board GPIOs
+
+Some board definitions require setup:
 ```python
 BOARD.setup()
 ```
+
 The LoRa object is instantiated and put into the standby mode
 ```python
 lora = LoRa()
 lora.set_mode(MODE.STDBY)
 ```
+
 Registers are queried like so:
 ```python
 print lora.version()        # this prints the sx127x chip version
 print lora.get_freq()       # this prints the frequency setting 
 ```
-and setting registers is easy, too
+
+Most registers have idiomatic setters, using either numbers or the package constants:
 ```python
 lora.set_freq(433.0)       # Set the frequency to 433 MHz 
 ```
-In applications the `LoRa` class should be subclassed while overriding one or more of the callback functions that
-are invoked on successful RX or TX operations, for example.
+
+In applications the `LoRa` class should be subclassed while overriding one or
+more of the callback functions that are invoked on successful RX or TX
+operations. You also generally will want an application main loop that will
+poll for interrupts if your board does not automatically invoke them in
+threads. For example:
 ```python
 class MyLoRa(LoRa):
 
-  def __init__(self, verbose=False):
-    super(MyLoRa, self).__init__(verbose)
+  def __init__(self, board=None, verbose=False):
+    super(MyLoRa, self).__init__(board=board, verbose=verbose)
     # setup registers etc.
 
   def on_rx_done(self):
     payload = self.read_payload(nocheck=True) 
     # etc.
+    
+  def start():
+    while True:
+      if not self.irq_events_available:
+        self.handle_irq_flags()
 ```
 
-In the end the resources should be freed properly
+Some board definitions also require teardown at the end of the program to e.g.
+return GPIO pins to their default state:
 ```python
 BOARD.teardown()
 ```
 
 ### More details
-Most functions of `SX127x.Lora` are setter and getter functions. For example, the setter and getter for 
+Most functions in this package are setter and getter functions. For example, the setter and getter for 
 the coding rate are demonstrated here
 ```python 
 print lora.get_coding_rate()                # print the current coding rate
@@ -115,25 +90,19 @@ lora.set_coding_rate(CODING_RATE.CR4_6)     # set it to CR4_6
 
 # Installation
 
-Make sure SPI is activated on you RaspberryPi: [SPI](https://www.raspberrypi.org/documentation/hardware/raspberrypi/spi/README.md)
-**spi-lora** requires these two python packages:
-* [RPi.GPIO](https://pypi.python.org/pypi/RPi.GPIO") for accessing the GPIOs, it should be already installed on
-  a standard Raspian Linux image
-* [spidev](https://pypi.python.org/pypi/spidev) for controlling SPI
+Make sure SPI is activated on your device. For a Raspberry Pi, you may need to [put `dtparam=spi=on` in your `/boot/config.txt`](https://www.raspberrypi.org/documentation/hardware/raspberrypi/spi/README.md). You may also need to grant permissions on `/dev/spidev0.0` or similar device nodes to the user you intend to work as.
 
-In order to install spidev download the source code and run setup.py manually:
-```bash
-wget https://pypi.python.org/packages/source/s/spidev/spidev-3.1.tar.gz
-tar xfvz  spidev-3.1.tar.gz
-cd spidev-3.1
-sudo python setup.py install
+If using this package from source, make sure `spidev` is installed:
+
+```
+pip install spidev>=3.1
 ```
 
 At this point you may want to confirm that the unit tests pass. See the section [Tests](#tests) below.
 
 You can now run the scripts. For example dump the registers with `lora_util.py`: 
 ```bash
-rasp$ sudo ./lora_util.py
+$ ./lora_util.py
 SX127x LoRa registers:
  mode               SLEEP
  freq               434.000000 MHz
@@ -147,7 +116,7 @@ SX127x LoRa registers:
 
 # Class Reference
 
-The interface to the SX127x LoRa modem is implemented in the class `SX127x.LoRa.LoRa`.
+The interface to the LoRa modem is implemented in the class `spi_lora.LoRa.LoRa`.
 The most important modem configuration parameters are:
  
 | Function         | Description                                 |
@@ -159,11 +128,11 @@ The most important modem configuration parameters are:
 | | |
 | @todo            |                              |
 
-Most set_* functions have a mirror get_* function, but beware that the getter return types do not necessarily match 
+Most `set_*` functions have a mirror `get_*` function, but beware that the getter return types do not necessarily match 
 the setter input types.
 
 ### Register naming convention
-The register addresses are defined in class `SX127x.constants.REG` and we use a specific naming convention which 
+The register addresses are defined in class `spi_lora.constants.REG` and we use a specific naming convention which 
 is best illustrated by a few examples:
 
 | Register | Modem | Semtech doc.      | spi-lora                   |
@@ -173,15 +142,10 @@ is best illustrated by a few examples:
 | 0x1D     | LoRa  | RegModemConfig1   | REG.LORA.MODEM_CONFIG_1    |
 | etc.     |       |                   |                            |
 
-### Hardware
-Hardware related definition and initialisation are located in `SX127x.board_config.BOARD`.
-If you use a SBC other than the Raspberry Pi you'll have to adapt the BOARD class.
-
-
 # Script references
 
 ### Continuous receiver `rx_cont.py`
-The SX127x is put in RXCONT mode and continuously waits for transmissions. Upon a successful read the
+The modem is put in RXCONT mode and continuously waits for transmissions. Upon a successful read the
 payload and the irq flags are printed to screen.
 ```
 usage: rx_cont.py [-h] [--ocp OCP] [--sf SF] [--freq FREQ] [--bw BW]
@@ -193,7 +157,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --ocp OCP, -c OCP     Over current protection in mA (45 .. 240 mA)
   --sf SF, -s SF        Spreading factor (6...12). Default is 7.
-  --freq FREQ, -f FREQ  Frequency
+  --freq FREQ, -f FREQ  . Default is 869 MHz, a European frequency. US users might try 903.
   --bw BW, -b BW        Bandwidth (one of BW7_8 BW10_4 BW15_6 BW20_8 BW31_25
                         BW41_7 BW62_5 BW125 BW250 BW500). Default is BW125.
   --cr CODING_RATE, -r CODING_RATE
@@ -216,7 +180,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --ocp OCP, -c OCP     Over current protection in mA (45 .. 240 mA)
   --sf SF, -s SF        Spreading factor (6...12). Default is 7.
-  --freq FREQ, -f FREQ  Frequency
+  --freq FREQ, -f FREQ  Frequency. Default is 869 MHz, a European frequency. US users might try 903.
   --bw BW, -b BW        Bandwidth (one of BW7_8 BW10_4 BW15_6 BW20_8 BW31_25
                         BW41_7 BW62_5 BW125 BW250 BW500). Default is BW125.
   --cr CODING_RATE, -r CODING_RATE
@@ -238,61 +202,18 @@ Execute `test_lora.py` to run a few unit tests.
 
 Please feel free to comment, report issues, or contribute!
 
-Contact me via my company website [Mayer Analytics](http://mayeranalytics.com) and my private blog
-[mcmayer.net](http://mcmayer.net). 
-
-Follow me on twitter [@markuscmayer](https://twitter.com/markuscmayer) and
-[@mayeranalytics](https://twitter.com/mayeranalytics).
-
-
-# Roadmap
-
-95% of functions for the Sx127x LoRa capabilities are implemented. Functions will be added when necessary.
-The test coverage is rather low but we intend to change that soon.
-
-### Semtech SX1272/3 vs. SX1276/7/8/9
-**spi-lora** is not entirely compatible with the 1272.
-The 1276 and 1272 chips are different and the interfaces not 100% identical. For example registers 0x26/27. 
-But the spi-lora library should get you pretty far if you use it with care. Here are the two datasheets:
-* [Semtech - SX1276/77/78/79 - 137 MHz to 1020 MHz Low Power Long Range Transceiver](http://www.semtech.com/images/datasheet/sx1276_77_78_79.pdf)
-* [Semtech SX1272/73 - 860 MHz to 1020 MHz Low Power Long Range Transceiver](http://www.semtech.com/images/datasheet/sx1272.pdf)
-
-### HopeRF transceiver ICs ###
-HopeRF has a family of LoRa capable transceiver chips [RFM92/95/96/98](http://www.hoperf.com/)
-that have identical or almost identical SPI interface as the Semtech SX1276/7/8/9 family.
-
-### Microchip transceiver IC ###
-Likewise Microchip has the chip [RN2483](http://ww1.microchip.com/downloads/en/DeviceDoc/50002346A.pdf)
-
-The [spi-lora](https://github.com/mayeranalytics/spi-lora) project will therefore be renamed to pyLoRa at some point.
+The `pySX127x` package on which this package is based is by [Markus C Mayer](http://mcmayer.net) of [Mayer Analytics](http://mayeranalytics.com).
 
 # LoRaWAN
-LoRaWAN is a LPWAN (low power WAN) and, and  **spi-lora** has almost no relationship with LoRaWAN. Here we only deal with the interface into the chip(s) that enable the physical layer of LoRaWAN networks. If you need a LoRaWAN implementation have a look at [Jeroennijhof](https://github.com/jeroennijhof)s [LoRaWAN](https://github.com/jeroennijhof/LoRaWAN) which is based on spi-lora.
+LoRaWAN is a LPWAN (low power WAN) and, and  **spi-lora** has almost no relationship with LoRaWAN. Here we only deal with the interface into the chip(s) that enable the physical layer of LoRaWAN networks. If you need a LoRaWAN implementation have a look at [Jeroennijhof](https://github.com/jeroennijhof)s [LoRaWAN](https://github.com/jeroennijhof/LoRaWAN) which is based on pySX127x.
 
 By the way, LoRaWAN is what you need when you want to talk to the [TheThingsNetwork](https://www.thethingsnetwork.org/), a "global open LoRaWAN network". The site has a lot of information and links to products and projects.
 
-
 # References
-
-### Hardware references
-* [Semtech SX1276/77/78/79 - 137 MHz to 1020 MHz Low Power Long Range Transceiver](http://www.semtech.com/images/datasheet/sx1276_77_78_79.pdf)
-* [Modtronix inAir9](http://modtronix.com/inair9.html)
-* [Spidev Documentation](http://tightdev.net/SpiDev_Doc.pdf)
-* [Make: Tutorial: Raspberry Pi GPIO Pins and Python](http://makezine.com/projects/tutorial-raspberry-pi-gpio-pins-and-python/)
-
-### LoRa performance tests
-* [Extreme Range Links: LoRa 868 / 900MHz SX1272 LoRa module for Arduino, Raspberry Pi and Intel Galileo](https://www.cooking-hacks.com/documentation/tutorials/extreme-range-lora-sx1272-module-shield-arduino-raspberry-pi-intel-galileo/)
-* [UK LoRa versus FSK - 40km LoS (Line of Sight) test!](http://www.instructables.com/id/Introducing-LoRa-/step17/Other-region-tests/)
-* [Andreas Spiess LoRaWAN World Record Attempt](https://www.youtube.com/watch?v=adhWIo-7gr4)
-
-### Spread spectrum modulation theory
-* [An Introduction to Spread Spectrum Techniques](http://www.ausairpower.net/OSR-0597.html)
-* [Theory of Spread-Spectrum Communications-A Tutorial](http://www.fer.unizg.hr/_download/repository/Theory%20of%20Spread-Spectrum%20Communications-A%20Tutorial.pdf)
-(technical paper)
-
 
 # Copyright and License
 
+&copy; 2021 Adam Novak
 &copy; 2015 Mayer Analytics Ltd., All Rights Reserved.
 
 ### Short version
@@ -313,7 +234,7 @@ Such a license is mandatory as soon as you develop commercial activities involvi
 spi-lora without disclosing the source code of your own applications, or shipping spi-lora with a closed source product.
 
 You should have received a copy of the GNU General Public License
-along with pySX127.  If not, see <http://www.gnu.org/licenses/>.
+aling with spi-lora.  If not, see <http://www.gnu.org/licenses/>.
 
 # Other legal boredom
 LoRa, LoRaWAN, LoRa Alliance are all trademarks by ... someone.
