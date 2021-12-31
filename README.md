@@ -62,8 +62,8 @@ Todo:
 ### Overview
 First import the modules 
 ```python
-from SX127x.LoRa import *
-from SX127x.board_config import BOARD
+from spi_lora.LoRa import *
+from spi_lora.board_config import BOARD
 ```
 then set up the board GPIOs
 ```python
@@ -116,7 +116,7 @@ lora.set_coding_rate(CODING_RATE.CR4_6)     # set it to CR4_6
 # Installation
 
 Make sure SPI is activated on you RaspberryPi: [SPI](https://www.raspberrypi.org/documentation/hardware/raspberrypi/spi/README.md)
-**pySX127x** requires these two python packages:
+**spi-lora** requires these two python packages:
 * [RPi.GPIO](https://pypi.python.org/pypi/RPi.GPIO") for accessing the GPIOs, it should be already installed on
   a standard Raspian Linux image
 * [spidev](https://pypi.python.org/pypi/spidev) for controlling SPI
@@ -166,7 +166,7 @@ the setter input types.
 The register addresses are defined in class `SX127x.constants.REG` and we use a specific naming convention which 
 is best illustrated by a few examples:
 
-| Register | Modem | Semtech doc.      | pySX127x                   |
+| Register | Modem | Semtech doc.      | spi-lora                   |
 |----------|-------|-------------------| ---------------------------|
 | 0x0E     | LoRa  | RegFifoTxBaseAddr | REG.LORA.FIFO_TX_BASE_ADDR |
 | 0x0E     | FSK   | RegRssiCOnfig     | REG.FSK.RSSI_CONFIG        |
@@ -251,9 +251,9 @@ Follow me on twitter [@markuscmayer](https://twitter.com/markuscmayer) and
 The test coverage is rather low but we intend to change that soon.
 
 ### Semtech SX1272/3 vs. SX1276/7/8/9
-**pySX127x** is not entirely compatible with the 1272.
+**spi-lora** is not entirely compatible with the 1272.
 The 1276 and 1272 chips are different and the interfaces not 100% identical. For example registers 0x26/27. 
-But the pySX127x library should get you pretty far if you use it with care. Here are the two datasheets:
+But the spi-lora library should get you pretty far if you use it with care. Here are the two datasheets:
 * [Semtech - SX1276/77/78/79 - 137 MHz to 1020 MHz Low Power Long Range Transceiver](http://www.semtech.com/images/datasheet/sx1276_77_78_79.pdf)
 * [Semtech SX1272/73 - 860 MHz to 1020 MHz Low Power Long Range Transceiver](http://www.semtech.com/images/datasheet/sx1272.pdf)
 
@@ -264,10 +264,10 @@ that have identical or almost identical SPI interface as the Semtech SX1276/7/8/
 ### Microchip transceiver IC ###
 Likewise Microchip has the chip [RN2483](http://ww1.microchip.com/downloads/en/DeviceDoc/50002346A.pdf)
 
-The [pySX127x](https://github.com/mayeranalytics/pySX127x) project will therefore be renamed to pyLoRa at some point.
+The [spi-lora](https://github.com/mayeranalytics/spi-lora) project will therefore be renamed to pyLoRa at some point.
 
 # LoRaWAN
-LoRaWAN is a LPWAN (low power WAN) and, and  **pySX127x** has almost no relationship with LoRaWAN. Here we only deal with the interface into the chip(s) that enable the physical layer of LoRaWAN networks. If you need a LoRaWAN implementation have a look at [Jeroennijhof](https://github.com/jeroennijhof)s [LoRaWAN](https://github.com/jeroennijhof/LoRaWAN) which is based on pySX127x.
+LoRaWAN is a LPWAN (low power WAN) and, and  **spi-lora** has almost no relationship with LoRaWAN. Here we only deal with the interface into the chip(s) that enable the physical layer of LoRaWAN networks. If you need a LoRaWAN implementation have a look at [Jeroennijhof](https://github.com/jeroennijhof)s [LoRaWAN](https://github.com/jeroennijhof/LoRaWAN) which is based on spi-lora.
 
 By the way, LoRaWAN is what you need when you want to talk to the [TheThingsNetwork](https://www.thethingsnetwork.org/), a "global open LoRaWAN network". The site has a lot of information and links to products and projects.
 
@@ -299,18 +299,18 @@ By the way, LoRaWAN is what you need when you want to talk to the [TheThingsNetw
 The license is [GNU AGPL](http://www.gnu.org/licenses/agpl-3.0.en.html).
 
 ### Long version
-pySX127x is free software: you can redistribute it and/or modify it under the terms of the 
+spi-lora is free software: you can redistribute it and/or modify it under the terms of the 
 GNU Affero General Public License as published by the Free Software Foundation, 
 either version 3 of the License, or (at your option) any later version.
 
-pySX127x is distributed in the hope that it will be useful, 
+spi-lora is distributed in the hope that it will be useful, 
 but WITHOUT ANY WARRANTY; without even the implied warranty of 
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
 See the GNU Affero General Public License for more details.
 
 You can be released from the requirements of the license by obtaining a commercial license. 
 Such a license is mandatory as soon as you develop commercial activities involving 
-pySX127x without disclosing the source code of your own applications, or shipping pySX127x with a closed source product.
+spi-lora without disclosing the source code of your own applications, or shipping spi-lora with a closed source product.
 
 You should have received a copy of the GNU General Public License
 along with pySX127.  If not, see <http://www.gnu.org/licenses/>.

@@ -3,19 +3,19 @@
 
 # Copyright 2015-2018 Mayer Analytics Ltd.
 #
-# This file is part of pySX127x.
+# This file is part of spi-lora.
 #
-# pySX127x is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public
+# spi-lora is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public
 # License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later
 # version.
 #
-# pySX127x is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+# spi-lora is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
 # details.
 #
 # You can be released from the requirements of the license by obtaining a commercial license. Such a license is
-# mandatory as soon as you develop commercial activities involving pySX127x without disclosing the source code of your
-# own applications, or shipping pySX127x with a closed source product.
+# mandatory as soon as you develop commercial activities involving spi-lora without disclosing the source code of your
+# own applications, or shipping spi-lora with a closed source product.
 #
 # You should have received a copy of the GNU General Public License along with pySX127.  If not, see
 # <http://www.gnu.org/licenses/>.
@@ -100,7 +100,7 @@ class GenericLoRa(object):
         
         Send the device to sleep, read all registers, and do the calibration (if do_calibration=True)
         :param spi_connection: the open spidev SPI connection to the modem
-        :param low_band: tell pySX127x here whether the attached RF module uses
+        :param low_band: tell spi-lora here whether the attached RF module uses
         low-band (RF*_LF pins) or high-band (RF*_HF pins). Low band (called
         band 1&2) are 137-175 MHz and 410-525 MHz. High band (called band 3) is
         862-1020 MHz.
@@ -1042,7 +1042,7 @@ class LoRa(GenericLoRa):
         
         if board is None:
             # Try and import a default board
-            from SX127x.board_config import BOARD as board
+            from spi_lora.board_config import BOARD as board
         
         # Connect to the default SPI bus for the board
         spi_connection = board.SpiDev()

@@ -27,8 +27,8 @@
 
 import sys, asyncore
 from time import time
-from SX127x.LoRa import *
-from SX127x.boards.RPi_inAir9B import BOARD
+from spi_lora.LoRa import *
+from spi_lora.boards.RPi_inAir9B import BOARD
 
 BOARD.setup()
 

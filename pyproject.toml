@@ -1,0 +1,10 @@
+[tool.poetry]
+name = "spi-lora"
+version = "0.1.0"
+description = ""
+authors = ["Adam Novak <interfect@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3"
+spidev = ">=3.5"
+
