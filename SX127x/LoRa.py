@@ -239,16 +239,8 @@ class GenericLoRa(object):
         work. 
         """
         flags = self.get_irq_flags()
-        # Clear all the interrupt flags that were set so we can get them again.
-        # clear_irq_flags takes any non-None as a clear, even 0 or False, so we make sure to provide Nones.
-        self.clear_irq_flags(RxTimeout=flags['rx_timeout'] or None,
-                             RxDone=flags['rx_done'] or None,
-                             PayloadCrcError=flags['crc_error'] or None, 
-                             ValidHeader=flags['valid_header'] or None,
-                             TxDone=flags['tx_done'] or None,
-                             CadDone=flags['cad_done'] or None, 
-                             FhssChangeChannel=flags['fhss_change_ch'] or None,
-                             CadDetected=flags['cad_detected'] or None)
+        # Some demo handlers expect to see the flags set in the handler, so we
+        # don't clear them yet.
         if flags['rx_timeout']:
             self.on_rx_timeout()
         if flags['rx_done']:
@@ -265,6 +257,16 @@ class GenericLoRa(object):
             self.on_fhss_change_channel()
         if flags['cad_detected']:
             self.on_CadDetected()
+        # Clear all the interrupt flags that were set so we can get them again.
+        # clear_irq_flags takes any non-None as a clear, even 0 or False, so we make sure to provide Nones.
+        self.clear_irq_flags(RxTimeout=flags['rx_timeout'] or None,
+                             RxDone=flags['rx_done'] or None,
+                             PayloadCrcError=flags['crc_error'] or None, 
+                             ValidHeader=flags['valid_header'] or None,
+                             TxDone=flags['tx_done'] or None,
+                             CadDone=flags['cad_done'] or None, 
+                             FhssChangeChannel=flags['fhss_change_ch'] or None,
+                             CadDetected=flags['cad_detected'] or None)
 
     # All the set/get/read/write functions
 
@@ -1024,7 +1026,8 @@ class LoRa(GenericLoRa):
     Board-based LoRa driver implementation.
     
     Requires a SX127x.boards.BaseBoard implementation to supply SPI, band, and
-    interrupt line capabilities.
+    interrupt line capabilities. If not specifies, picks a default predefined
+    board configuration.
     
     Can be extended and have its on_ methods overridden to receive interrupts.
     If the board does not support interrupt lines, the user must call
@@ -1032,6 +1035,11 @@ class LoRa(GenericLoRa):
     """
     
     def __init__(self, board=None, verbose=True, do_calibration=True, calibration_freq=868):
+        if board is False or board is True:
+            # Someone is calling us expexcting verbose to be the first parameter.
+            verbose = board
+            board = None
+        
         if board is None:
             # Try and import a default board
             from SX127x.board_config import BOARD as board

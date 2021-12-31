@@ -26,7 +26,7 @@ import sys
 from time import sleep
 from SX127x.LoRa import *
 from SX127x.LoRaArgumentParser import LoRaArgumentParser
-from SX127x.boards.RPi_inAir9B import BOARD
+from SX127x.boards.Generic_RFM95W import BOARD
 
 BOARD.setup()
 
@@ -97,6 +97,8 @@ class LoRaBeacon(LoRa):
         self.set_mode(MODE.TX)
         while True:
             sleep(1)
+            if not self.irq_events_available:
+                self.handle_irq_flags()
 
 lora = LoRaBeacon(BOARD, verbose=False)
 args = parser.parse_args(lora)

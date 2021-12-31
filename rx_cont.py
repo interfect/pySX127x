@@ -25,7 +25,7 @@
 from time import sleep
 from SX127x.LoRa import *
 from SX127x.LoRaArgumentParser import LoRaArgumentParser
-from SX127x.boards.RPi_inAir9B import BOARD
+from SX127x.boards.Generic_RFM95W import BOARD
 
 BOARD.setup()
 
@@ -82,9 +82,11 @@ class LoRaRcvCont(LoRa):
             status = self.get_modem_status()
             sys.stdout.flush()
             sys.stdout.write("\r%d %d %d" % (rssi_value, status['rx_ongoing'], status['modem_clear']))
+            if not self.irq_events_available:
+                self.handle_irq_flags()
 
 
-lora = LoRaRcvCont(verbose=False)
+lora = LoRaRcvCont(BOARD, verbose=False)
 args = parser.parse_args(lora)
 
 lora.set_mode(MODE.STDBY)
