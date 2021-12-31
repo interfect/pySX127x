@@ -1043,6 +1043,7 @@ class LoRa(GenericLoRa):
         # Grab the interrupt line attacher if the board has that capability
         add_events=getattr(board, 'add_events', None)
         # Pass along the parameters we derived from the board definition 
-        super().__init__(spi_connection, low_band, add_events=add_events,
-                         verbose=verbose, do_calibration=do_calibration, calibration_freq=calibration_freq)
+        super(LoRa, self).__init__(spi_connection, low_band, add_events=add_events,
+                                   verbose=verbose, do_calibration=do_calibration,
+                                   calibration_freq=calibration_freq)
 

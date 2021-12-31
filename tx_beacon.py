@@ -39,8 +39,8 @@ class LoRaBeacon(LoRa):
 
     tx_counter = 0
 
-    def __init__(self, verbose=False):
-        super(LoRaBeacon, self).__init__(verbose)
+    def __init__(self, board=None, verbose=False):
+        super(LoRaBeacon, self).__init__(board=board, verbose=verbose)
         self.set_mode(MODE.SLEEP)
         self.set_dio_mapping([1,0,0,0,0,0])
 
@@ -98,7 +98,7 @@ class LoRaBeacon(LoRa):
         while True:
             sleep(1)
 
-lora = LoRaBeacon(verbose=False)
+lora = LoRaBeacon(BOARD, verbose=False)
 args = parser.parse_args(lora)
 
 lora.set_pa_config(pa_select=1)

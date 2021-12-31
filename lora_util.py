@@ -23,7 +23,7 @@
 
 
 from SX127x.LoRa import LoRa
-from SX127x.boards.RPi_inAir9B import BOARD
+from SX127x.boards.Generic_RFM95W import BOARD
 import argparse
 
 BOARD.setup()
@@ -32,7 +32,7 @@ parser = argparse.ArgumentParser(description='LoRa utility functions')
 parser.add_argument('--dump', '-d', dest='dump', default=False, action="store_true", help="dump all registers")
 args = parser.parse_args()
 
-lora = LoRa(verbose=False)
+lora = LoRa(BOARD, verbose=False)
 
 if args.dump:
 

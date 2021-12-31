@@ -33,8 +33,8 @@ parser = LoRaArgumentParser("Continous LoRa receiver.")
 
 
 class LoRaRcvCont(LoRa):
-    def __init__(self, verbose=False):
-        super(LoRaRcvCont, self).__init__(verbose)
+    def __init__(self, board=None, verbose=False):
+        super(LoRaRcvCont, self).__init__(board=board, verbose=verbose)
         self.set_mode(MODE.SLEEP)
         self.set_dio_mapping([0] * 6)
 

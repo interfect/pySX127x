@@ -127,6 +127,6 @@ class TestSX127x(unittest.TestCase):
 if __name__ == '__main__':
 
     BOARD.setup()
-    lora = LoRa(verbose=False)
+    lora = LoRa(BOARD, verbose=False)
     unittest.main()
     BOARD.teardown()

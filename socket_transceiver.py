@@ -72,8 +72,8 @@ class Handler(asyncore.dispatcher):
         
 class LoRaSocket(LoRa):
     
-    def __init__(self, verbose=False):
-        super(LoRaSocket, self).__init__(verbose)
+    def __init__(self, board=None, verbose=False):
+        super(LoRaSocket, self).__init__(board=board, verbose=verbose)
         self.set_mode(MODE.SLEEP)
         self.set_pa_config(pa_select=1)
         self.set_max_payload_length(128) # set max payload to max fifo buffer length
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     
     server = Server('localhost', 20000)
     
-    lora = LoRaSocket(verbose=False)
+    lora = LoRaSocket(BOARD, verbose=False)
 
     print(lora)
     

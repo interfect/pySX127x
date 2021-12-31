@@ -21,7 +21,7 @@
 
 import time
 
-class BaseBoard:
+class BaseBoard(object):
     """
     Base borad class which user-defined boards or pre-defined boards will
     implement.
