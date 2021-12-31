@@ -40,8 +40,8 @@ lora.set_mode(MODE.STDBY)
 
 Registers are queried like so:
 ```python
-print(lora.version())        # this prints the sx127x chip version
-print(lora.get_freq())       # this prints the frequency setting 
+print(lora.version())      # this prints the sx127x chip version
+print(lora.get_freq())     # this prints the frequency setting 
 ```
 
 Most registers have idiomatic setters, using either numbers or the package constants:
