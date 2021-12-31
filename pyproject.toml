@@ -1,10 +1,5 @@
-[tool.poetry]
-name = "spi-lora"
-version = "0.1.0"
-description = ""
-authors = ["Adam Novak <interfect@gmail.com>"]
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.poetry.dependencies]
-python = ">=3"
-spidev = ">=3.1"
 
