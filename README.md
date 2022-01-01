@@ -7,9 +7,10 @@ This package intends to allow using these devices over a generic Linux SPI bus, 
 
 # Hardware
 
-To use this package, you usually want to use a board definition, inheriting from `spi_lora.boards.BaseBoard`. The module currently provides a couple of pre-defined boards:
+To use this package, you usually want to use a board definition, inheriting from `spi_lora.boards.BaseBoard`. The module currently provides a few pre-defined boards. The `RPi_` boards can only be safely imported if `RPi.GPIO` is available.
 * `spi_lora.boards.Generic_RFM95.BOARD`, for an RFM95 module attached via SPI only on SPI bus 0 device 0.
-* `spi_lora.boards.RPi_inAir9B.BOARD`, for the inAir9B on a Raspberry Pi system that `pySX127x` is designed for. This can only be safely imported if `RPi.GPIO` is available.
+* `spi_lora.boards.RPi_inAir9B.BOARD`, for the inAir9B on a Raspberry Pi system that `pySX127x` is designed for.
+* `spi_lora.boards.RPi_Adafruit4074.BOARD`, for the [Adafruit LoRA Radio Bonnet with OLED](https://www.adafruit.com/product/4074) on a Raspberry Pi. 
 
 If you aren't using one of these hardware configurations, you can define your own board definition by extending `spi_lora.boards.BaseBoard`.
 
