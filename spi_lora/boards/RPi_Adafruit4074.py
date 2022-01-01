@@ -56,6 +56,7 @@ from . import BaseBoard
 
 class BOARD(BaseBoard):
     """ This is the Adafruit LoRa Radio Bonnet.
+    Note that on this board only DIOs 0, 1, and 2 are available for interrupts.
     """
     # Note that the BCOM numbering for the GPIOs is used.
     DIO0 = 22   # RaspPi GPIO 22
@@ -65,6 +66,9 @@ class BOARD(BaseBoard):
 
     # The spi object is kept here
     spi = None
+    
+    # This is not a low band board
+    low_band = False
 
     @classmethod
     def setup(cls):
@@ -73,16 +77,26 @@ class BOARD(BaseBoard):
         """
         GPIO.setmode(GPIO.BCM)
 
-        for gpio_pin in [BOARD.DIO0, BOARD.DIO1, BOARD.DIO2]:
+        for gpio_pin in [cls.DIO0, cls.DIO1, cls.DIO2]:
             GPIO.setup(gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+        GPIO.setup(cls.RESET, GPIO.OUT)
         # blink 2 times to signal the board is set up
-        BOARD.blink(.1, 2)
+        cls.blink(.1, 2)
 
     @classmethod
     def teardown(cls):
         """ Cleanup GPIO and SpiDev """
         GPIO.cleanup()
-        BOARD.spi.close()
+        cls.spi.close()
+       
+    @classmethod
+    def reset(cls):
+        """ Reboot the modem. """
+        GPIO.output(cls.RESET, GPIO.HIGH)
+        time.sleep(.100)
+        GPIO.output(cls.RESET, GPIO.LOW)
+
+    print("reset adafruit bonnet.")
 
     @classmethod
     def SpiDev(cls, spi_bus=0, spi_cs=1):
@@ -105,10 +119,10 @@ class BOARD(BaseBoard):
         # high_power=True,
         baudrate=5000000
         #         self._device = spidev.SPIDevice(spi, cs, baudrate=baudrate, polarity=0, phase=0)
-        BOARD.spi = spidev.SpiDev()
-        BOARD.spi.open(spi_bus, spi_cs)
-        BOARD.spi.max_speed_hz = baudrate
-        return BOARD.spi
+        cls.spi = spidev.SpiDev()
+        cls.spi.open(spi_bus, spi_cs)
+        cls.spi.max_speed_hz = baudrate
+        return cls.spi
 
     @classmethod
     def add_event_detect(cls, dio_number, callback):
@@ -121,9 +135,7 @@ class BOARD(BaseBoard):
 
     @classmethod
     def add_events(cls, cb_dio0, cb_dio1, cb_dio2, cb_dio3, cb_dio4, cb_dio5, switch_cb=None):
-        BOARD.add_event_detect(BOARD.DIO0, callback=cb_dio0)
-        BOARD.add_event_detect(BOARD.DIO1, callback=cb_dio1)
-        BOARD.add_event_detect(BOARD.DIO2, callback=cb_dio2)
-        if switch_cb is not None:
-            GPIO.add_event_detect(BOARD.SWITCH, GPIO.RISING, callback=switch_cb, bouncetime=300)
+        cls.add_event_detect(cls.DIO0, callback=cb_dio0)
+        cls.add_event_detect(cls.DIO1, callback=cb_dio1)
+        cls.add_event_detect(cls.DIO2, callback=cb_dio2)
 

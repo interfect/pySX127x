@@ -50,6 +50,12 @@ class BaseBoard(object):
         """ Clean up GPIO and SPI devices, if necessary. """
         # Boards may not have this optional feature, so do nothing by default.
         pass
+        
+    @classmethod
+    def reset(cls):
+        """ Reset the modem, if the reset line is connected. """
+        # Boards may not have this optional feature, so do nothing by default.
+        pass
 
     @classmethod
     def SpiDev(cls, spi_bus=None, spi_cs=None):
