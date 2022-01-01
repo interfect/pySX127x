@@ -8,7 +8,7 @@ This package intends to allow using these devices over a generic Linux SPI bus, 
 # Hardware
 
 To use this package, you usually want to use a board definition, inheriting from `spi_lora.boards.BaseBoard`. The module currently provides a couple of pre-defined boards:
-* `spi_lora.boards.Generic_RMF95.BOARD`, for an RMF95 module attached via SPI only on SPI bus 0 device 0.
+* `spi_lora.boards.Generic_RFM95.BOARD`, for an RFM95 module attached via SPI only on SPI bus 0 device 0.
 * `spi_lora.boards.RPi_inAir9B.BOARD`, for the inAir9B on a Raspberry Pi system that `pySX127x` is designed for. This can only be safely imported if `RPi.GPIO` is available.
 
 If you aren't using one of these hardware configurations, you can define your own board definition by extending `spi_lora.boards.BaseBoard`.
@@ -24,7 +24,7 @@ First import the LoRa class, constants you plan to use, and a board definition:
 ```python
 from spi_lora.LoRa import LoRa
 from spi_lora.constants import MODE, CODING_RATE
-from spi_lora.boards.Generic_RMF95 import BOARD
+from spi_lora.boards.Generic_RFM95 import BOARD
 ```
 
 Some board definitions require setup:
