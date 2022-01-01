@@ -92,10 +92,23 @@ lora.set_coding_rate(CODING_RATE.CR4_6)     # set it to CR4_6
 
 Make sure SPI is activated on your device. For a Raspberry Pi, you may need to [put `dtparam=spi=on` in your `/boot/config.txt`](https://www.raspberrypi.org/documentation/hardware/raspberrypi/spi/README.md). You may also need to grant permissions on `/dev/spidev0.0` or similar device nodes to the user you intend to work as.
 
+## From PyPi
+
+Simply `pip install spi-lora`, or depend on the `spi-lora` package in your package.
+
+## From Source
+
 If using this package from source, make sure `spidev` is installed:
 
-```
+```bash
 pip install spidev>=3.1
+```
+
+Then you can clone the repo:
+
+```bash
+git clone https://github.com/interfect/spi-lora.git
+cd spi-lora
 ```
 
 At this point you may want to confirm that the unit tests pass. See the section [Tests](#tests) below.
