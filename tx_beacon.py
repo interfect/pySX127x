@@ -33,6 +33,7 @@ BOARD.setup()
 parser = LoRaArgumentParser("A simple LoRa beacon")
 parser.add_argument('--single', '-S', dest='single', default=False, action="store_true", help="Single transmission")
 parser.add_argument('--wait', '-w', dest='wait', default=1, action="store", type=float, help="Waiting time between transmissions (default is 0s)")
+parser.add_argument('--message', '-m', dest='message', default=None, help="Transmit given text")
 
 
 class LoRaBeacon(LoRa):
@@ -43,6 +44,7 @@ class LoRaBeacon(LoRa):
         super(LoRaBeacon, self).__init__(board=board, verbose=verbose)
         self.set_mode(MODE.SLEEP)
         self.set_dio_mapping([1,0,0,0,0,0])
+        self.message = None
 
     def on_rx_done(self):
         print("\nRxDone")
@@ -64,9 +66,7 @@ class LoRaBeacon(LoRa):
             sys.exit(0)
         BOARD.led_off()
         sleep(args.wait)
-        self.write_payload([0x0f])
-        BOARD.led_on()
-        self.set_mode(MODE.TX)
+        self._send_message()
 
     def on_cad_done(self):
         print("\non_CadDone")
@@ -87,14 +87,22 @@ class LoRaBeacon(LoRa):
     def on_fhss_change_channel(self):
         print("\non_FhssChangeChannel")
         print(self.get_irq_flags())
+        
+    def _send_message(self):
+        if self.message:
+            # Send the specified message
+            self.write_payload([b for b in self.message.encode('utf-8')])
+        else:
+            # Send a generic payload
+            self.write_payload([0x0f])
+        BOARD.led_on()
+        self.set_mode(MODE.TX)
 
     def start(self):
         global args
         sys.stdout.write("\rstart")
         self.tx_counter = 0
-        BOARD.led_on()
-        self.write_payload([0x0f])
-        self.set_mode(MODE.TX)
+        self._send_message()
         while True:
             sleep(1)
             if not self.irq_events_available:
@@ -102,6 +110,8 @@ class LoRaBeacon(LoRa):
 
 lora = LoRaBeacon(BOARD, verbose=False)
 args = parser.parse_args(lora)
+if args.message:
+    lora.message = args.message
 
 lora.set_pa_config(pa_select=1)
 #lora.set_rx_crc(True)
