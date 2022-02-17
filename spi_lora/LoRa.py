@@ -934,7 +934,7 @@ class GenericLoRa(object):
         values = self.get_all_registers()
         skip_set = set([REG.LORA.FIFO])
         result_list = []
-        for i, s in REG.LORA.lookup.iteritems():
+        for i, s in REG.LORA.lookup.items():
             if i in skip_set:
                 continue
             if i < len(values):
