@@ -937,7 +937,10 @@ class GenericLoRa(object):
         for i, s in REG.LORA.lookup.iteritems():
             if i in skip_set:
                 continue
-            v = values[i]
+            if i < len(values):
+                v = values[i]
+            else:
+                v = None
             result_list.append((i, s, v))
         return result_list
 
@@ -948,8 +951,11 @@ class GenericLoRa(object):
         return self.spi.xfer([register_address | 0x80, val])[1]
 
     def get_all_registers(self):
-        # read all registers
-        reg = [0] + self.spi.xfer([1]+[0]*0x3E)[1:]
+        # Determine range to read
+        first_register = REG.LORA.OP_MODE
+        last_register = REG.LORA.PLL
+        # read all registers into an array mirroring memory
+        reg = [0]*first_register + self.spi.xfer([first_register]+[0]*(last_register - first_register + 1))[1:]
         self.mode = reg[1]
         return reg
 
