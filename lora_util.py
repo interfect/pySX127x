@@ -40,7 +40,10 @@ if args.dump:
     print("%02s %18s %2s %8s" % ('i', 'reg_name', 'v', 'v'))
     print("-- ------------------ -- --------")
     for reg_i, reg_name, val in lora.dump_registers():
-        print("%02X %18s %02X %s" % (reg_i, reg_name, val, format(val, '#010b')[2:]))
+        if val is not None:
+            print("%02X %18s %02X %s" % (reg_i, reg_name, val, format(val, '#010b')[2:]))
+        else:
+            print("%02X %18s XX XXXXXXXX" % (reg_i, reg_name))
     print("")
 
 else:
