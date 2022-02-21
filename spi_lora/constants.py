@@ -145,6 +145,7 @@ class REG:
         MODEM_CONFIG_2     = 0x1E
         SYMB_TIMEOUT_LSB   = 0x1F
         PREAMBLE_MSB       = 0x20
+        PREAMBLE_LSB       = 0x21
         PAYLOAD_LENGTH     = 0x22
         MAX_PAYLOAD_LENGTH = 0x23
         HOP_PERIOD         = 0x24
