@@ -37,7 +37,7 @@ try:
     parser.add_argument('--load', '-l', dest='load', default=None, type=argparse.FileType('r'), help="load and apply register dump file")
     args = parser.parse_args()
 
-    lora = LoRa(BOARD, verbose=False)
+    lora = LoRa(BOARD, verbose=False, do_calibration=False)
 
     if args.dump:
 

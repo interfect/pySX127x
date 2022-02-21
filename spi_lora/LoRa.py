@@ -127,27 +127,6 @@ class GenericLoRa(object):
         # more setup work:
         if do_calibration:
             self.rx_chain_calibration(calibration_freq)
-        # the FSK registers are set up exactly as modtronix do it:
-        lookup_fsk = [
-            #[REG.FSK.LNA            , 0x23],
-            #[REG.FSK.RX_CONFIG      , 0x1E],
-            #[REG.FSK.RSSI_CONFIG    , 0xD2],
-            #[REG.FSK.PREAMBLE_DETECT, 0xAA],
-            #[REG.FSK.OSC            , 0x07],
-            #[REG.FSK.SYNC_CONFIG    , 0x12],
-            #[REG.FSK.SYNC_VALUE_1   , 0xC1],
-            #[REG.FSK.SYNC_VALUE_2   , 0x94],
-            #[REG.FSK.SYNC_VALUE_3   , 0xC1],
-            #[REG.FSK.PACKET_CONFIG_1, 0xD8],
-            #[REG.FSK.FIFO_THRESH    , 0x8F],
-            #[REG.FSK.IMAGE_CAL      , 0x02],
-            #[REG.FSK.DIO_MAPPING_1  , 0x00],
-            #[REG.FSK.DIO_MAPPING_2  , 0x30]
-        ]
-        self.set_mode(MODE.FSK_STDBY)
-        for register_address, value in lookup_fsk:
-            self.set_register(register_address, value)
-        self.set_mode(MODE.SLEEP)
         # set the dio_ mapping by calling the two get_dio_mapping_* functions
         self.get_dio_mapping_1()
         self.get_dio_mapping_2()
